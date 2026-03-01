@@ -1,0 +1,55 @@
+[package]
+name = "pastry"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+iced = { version = "0.14", features = ["tokio", "wgpu", "advanced", "svg", "image-without-codecs", "highlighter", "lazy", "canvas"], default-features = false }
+arboard = "3.6"
+global-hotkey = "0.7"
+tokio = { version = "1", features = ["sync", "time", "macros", "rt-multi-thread", "net"] }
+tray-icon = "0.19"
+warp = { version = "0.4.1", default-features = false, features = ["websocket", "server"] }
+futures-util = "0.3"
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "ico", "tiff", "webp"] }
+chrono = { version = "0.4", features = ["serde"] }
+resvg = "0.45"
+usvg = "0.45"
+dirs = "5.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+include_dir = "0.7"
+jsonpath-rust = "1.0.4"
+rquickjs = "0.11"
+md5 = "0.8.0"
+sha2 = "0.10.9"
+base64 = "0.22.1"
+hex = "0.4.3"
+regex = "1.10"
+iced_selection = "0.5"
+
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", features = ["NSScreen", "NSGraphics", "NSApplication", "NSPasteboard", "NSWindow"] }
+objc2-foundation = { version = "0.3", features = ["NSGeometry", "NSURL", "NSString"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Ole", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+iced = { version = "0.14", features = ["tokio", "wgpu", "advanced", "svg", "image-without-codecs", "highlighter", "lazy", "canvas", "x11", "wayland"], default-features = false }
+x11rb = "0.13"
+gtk = "0.18"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[build-dependencies]
+winresource = "0.1"

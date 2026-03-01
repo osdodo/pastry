@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pastry - Clipboard Sync</title>
+    <script id="pastry-runtime-config" type="application/json">__PASTRY_RUNTIME_CONFIG__</script>
+    <script>
+        (() => {
+            const fallback = { language: 'zh', theme: 'dark' };
+            const configNode = document.getElementById('pastry-runtime-config');
+            let config = fallback;
+            if (configNode && configNode.textContent) {
+                try {
+                    config = { ...fallback, ...JSON.parse(configNode.textContent) };
+                } catch (_) {
+                    config = fallback;
+                }
+            }
+
+            window.__PASTRY_WEB_CONFIG__ = config;
+            const mode = config.theme === 'light' ? 'light' : 'dark';
+            document.documentElement.dataset.theme = mode;
+            document.documentElement.lang = config.language === 'en' ? 'en' : 'zh-CN';
+        })();
+    </script>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg-deep: #17181d;
+            --bg-soft: #101116;
+            --surface-soft: rgba(255, 255, 255, 0.04);
+            --surface-strong: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.14);
+            --border-strong: rgba(255, 255, 255, 0.22);
+            --text-0: #f4f5fb;
+            --text-1: #ccd0e0;
+            --text-2: #9aa2bb;
+            --brand: #6c55f6;
+            --brand-strong: #5b45e8;
+            --brand-soft: rgba(108, 85, 246, 0.2);
+            --green: #4dcc4d;
+            --danger: #e64d4d;
+            --shadow-lg: 0 30px 72px rgba(0, 0, 0, 0.5);
+            --shadow-md: 0 16px 36px rgba(0, 0, 0, 0.3);
+            --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.22);
+            --bg-glow-1: rgba(108, 85, 246, 0.28);
+            --bg-glow-2: rgba(108, 85, 246, 0.14);
+            --grid-line: rgba(255, 255, 255, 0.05);
+            --shell-bg: rgba(38, 38, 38, 0.9);
+            --shell-border: rgba(255, 255, 255, 0.1);
+            --shell-highlight: rgba(255, 255, 255, 0.14);
+            --topbar-bg: linear-gradient(180deg, rgba(41, 41, 49, 0.95) 0%, rgba(34, 34, 41, 0.95) 100%);
+            --tabs-bg: linear-gradient(180deg, rgba(40, 40, 48, 0.9) 0%, rgba(34, 34, 42, 0.9) 100%);
+            --tabs-note-bg: rgba(108, 85, 246, 0.12);
+            --tabs-note-border: rgba(108, 85, 246, 0.4);
+            --tab-bg: rgba(255, 255, 255, 0.03);
+            --tab-border: rgba(255, 255, 255, 0.14);
+            --tab-hover-bg: rgba(108, 85, 246, 0.2);
+            --tab-hover-border: rgba(108, 85, 246, 0.45);
+            --panel-bg: linear-gradient(180deg, rgba(45, 45, 54, 0.96) 0%, rgba(37, 37, 45, 0.96) 100%);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --panel-heading-bg: linear-gradient(180deg, rgba(53, 53, 63, 0.92) 0%, rgba(44, 44, 52, 0.92) 100%);
+            --panel-heading-border: rgba(255, 255, 255, 0.11);
+            --panel-tag-bg: rgba(108, 85, 246, 0.2);
+            --panel-tag-border: rgba(108, 85, 246, 0.45);
+            --panel-tag-text: #d8d1ff;
+            --empty-bg: rgba(108, 85, 246, 0.12);
+            --empty-border: rgba(108, 85, 246, 0.4);
+            --empty-text: #cdc4ff;
+            --actions-bg: linear-gradient(180deg, rgba(50, 50, 60, 0.94) 0%, rgba(43, 43, 52, 0.94) 100%);
+            --actions-border: rgba(255, 255, 255, 0.11);
+            --pill-bg: rgba(255, 255, 255, 0.04);
+            --pill-border: rgba(255, 255, 255, 0.14);
+            --pill-text: #cfd4e4;
+            --timestamp-bg: rgba(108, 85, 246, 0.16);
+            --timestamp-border: rgba(108, 85, 246, 0.4);
+            --timestamp-text: #d2cbff;
+            --btn-secondary-bg: rgba(255, 255, 255, 0.04);
+            --btn-secondary-border: rgba(255, 255, 255, 0.14);
+            --btn-secondary-hover-bg: rgba(255, 255, 255, 0.09);
+            --btn-secondary-text: #d7dbeb;
+            --radius-xl: 14px;
+            --radius-lg: 10px;
+            --radius-md: 8px;
+            --radius-sm: 7px;
+        }
+
+        html[data-theme='light'] {
+            color-scheme: light;
+            --bg-deep: #edf3ff;
+            --bg-soft: #f7faff;
+            --surface-soft: #f6f9ff;
+            --surface-strong: #eef4ff;
+            --border: #dbe6f5;
+            --border-strong: #c8d8ef;
+            --text-0: #0f2340;
+            --text-1: #3f5878;
+            --text-2: #7086a4;
+            --brand: #6c55f6;
+            --brand-strong: #5a44e5;
+            --brand-soft: #ece7ff;
+            --green: #33b34d;
+            --danger: #d93333;
+            --shadow-lg: 0 30px 72px rgba(21, 45, 82, 0.2);
+            --shadow-md: 0 16px 36px rgba(30, 71, 126, 0.12);
+            --shadow-sm: 0 6px 18px rgba(18, 53, 98, 0.08);
+            --bg-glow-1: rgba(97, 156, 255, 0.38);
+            --bg-glow-2: rgba(137, 186, 255, 0.3);
+            --grid-line: rgba(67, 102, 150, 0.045);
+            --shell-bg: rgba(255, 255, 255, 0.82);
+            --shell-border: rgba(255, 255, 255, 0.72);
+            --shell-highlight: rgba(255, 255, 255, 0.7);
+            --topbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(245, 250, 255, 0.92) 100%);
+            --tabs-bg: linear-gradient(180deg, rgba(250, 252, 255, 0.96) 0%, rgba(244, 249, 255, 0.92) 100%);
+            --tabs-note-bg: rgba(238, 246, 255, 0.86);
+            --tabs-note-border: #d7e4f5;
+            --tab-bg: #ffffff;
+            --tab-border: #d7e4f5;
+            --tab-hover-bg: #f4f9ff;
+            --tab-hover-border: #c6d8ee;
+            --panel-bg: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            --panel-border: #dce8f6;
+            --panel-heading-bg: linear-gradient(180deg, rgba(250, 253, 255, 0.96) 0%, rgba(245, 250, 255, 0.96) 100%);
+            --panel-heading-border: #e4ecf8;
+            --panel-tag-bg: #f0f6ff;
+            --panel-tag-border: #d3e2f4;
+            --panel-tag-text: #4c6d95;
+            --empty-bg: #f3f8ff;
+            --empty-border: #bdd3ef;
+            --empty-text: #537198;
+            --actions-bg: linear-gradient(180deg, rgba(249, 253, 255, 0.95) 0%, rgba(243, 248, 255, 0.95) 100%);
+            --actions-border: #e4ecf8;
+            --pill-bg: rgba(245, 250, 255, 0.95);
+            --pill-border: #dbe6f5;
+            --pill-text: #3f5878;
+            --timestamp-bg: rgba(245, 250, 255, 0.86);
+            --timestamp-border: #d6e3f3;
+            --timestamp-text: #7086a4;
+            --btn-secondary-bg: #f6f9ff;
+            --btn-secondary-border: #d3e1f3;
+            --btn-secondary-hover-bg: #eef4ff;
+            --btn-secondary-text: #3f5878;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            --page-pad-top: max(8px, env(safe-area-inset-top));
+            --page-pad-right: max(8px, env(safe-area-inset-right));
+            --page-pad-bottom: max(8px, env(safe-area-inset-bottom));
+            --page-pad-left: max(8px, env(safe-area-inset-left));
+            text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+            min-height: 100vh;
+            font-family: "SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            color: var(--text-0);
+            background: linear-gradient(150deg, var(--bg-soft), var(--bg-deep));
+            padding: var(--page-pad-top) var(--page-pad-right) var(--page-pad-bottom) var(--page-pad-left);
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 28px 28px;
+            opacity: 0.22;
+        }
+
+        .app-shell {
+            position: relative;
+            z-index: 1;
+            width: min(1180px, 100%);
+            height: calc(100vh - var(--page-pad-top) - var(--page-pad-bottom));
+            height: calc(100dvh - var(--page-pad-top) - var(--page-pad-bottom));
+            margin: 0 auto;
+            border-radius: var(--radius-xl);
+            background: var(--shell-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--shell-border);
+            box-shadow: none;
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            transform: translateY(10px);
+            opacity: 0;
+            animation: shell-enter 0.55s cubic-bezier(0.2, 0.82, 0.25, 1) forwards;
+        }
+
+        .app-shell::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: inherit;
+            box-shadow: none;
+        }
+
+        @keyframes shell-enter {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            background: var(--topbar-bg);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .brand-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            background: linear-gradient(140deg, var(--brand), var(--brand-strong));
+            color: #fff;
+            box-shadow: none;
+            flex-shrink: 0;
+        }
+
+        .brand-copy {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .brand-title {
+            font-size: clamp(16px, 2vw, 18px);
+            font-weight: 700;
+            line-height: 1.25;
+            color: var(--text-0);
+            letter-spacing: 0.01em;
+        }
+
+        .brand-subtitle {
+            margin-top: 2px;
+            font-size: 12px;
+            color: var(--text-2);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 360px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--pill-text);
+            border: 1px solid var(--pill-border);
+            background: var(--pill-bg);
+            white-space: nowrap;
+            box-shadow: none;
+            flex-shrink: 0;
+            min-width: 0;
+            max-width: 48vw;
+        }
+
+        .status-pill span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #8ea2bc;
+            box-shadow: 0 0 0 0 rgba(151, 169, 190, 0.35);
+            transition: all 0.25s;
+        }
+
+        .status-indicator.connected {
+            background: var(--green);
+            box-shadow: 0 0 0 7px rgba(34, 160, 107, 0.16);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 252px 1fr;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .tabs {
+            border-right: 1px solid var(--border);
+            padding: 10px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--tabs-bg);
+            min-height: 0;
+        }
+
+        .tabs-headline {
+            padding: 2px 8px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            color: var(--text-2);
+            text-transform: uppercase;
+        }
+
+        .tab {
+            width: 100%;
+            min-width: 0;
+            border: 1px solid var(--tab-border);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            color: var(--text-1);
+            background: var(--tab-bg);
+            cursor: pointer;
+            transition: all 0.22s ease;
+            text-align: left;
+            white-space: normal;
+        }
+
+        .tab-main {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+        }
+
+        .tab-sub {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: var(--text-2);
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .tab:hover {
+            border-color: var(--tab-hover-border);
+            background: var(--tab-hover-bg);
+            transform: none;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+            border-color: transparent;
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .tab.active .tab-sub {
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .tabs-note {
+            margin-top: auto;
+            padding: 11px 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--tabs-note-border);
+            background: var(--tabs-note-bg);
+            font-size: 12px;
+            color: var(--text-2);
+            line-height: 1.45;
+        }
+
+        .workspace {
+            min-height: 0;
+            overflow: auto;
+            padding: clamp(8px, 1.2vw, 12px);
+        }
+
+        .tab-content {
+            display: none;
+            min-height: 100%;
+        }
+
+        .tab-content.active {
+            display: grid;
+            gap: 12px;
+            animation: content-enter 0.25s ease;
+        }
+
+        .receive-tab.active {
+            grid-template-rows: 1fr;
+        }
+
+        .send-tab.active {
+            grid-template-rows: 1fr;
+        }
+
+        @keyframes content-enter {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel {
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-lg);
+            background: var(--panel-bg);
+            min-height: 0;
+            overflow: auto;
+            position: relative;
+            box-shadow: none;
+        }
+
+        .panel::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: inherit;
+            box-shadow: none;
+        }
+
+        .receive-panel {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        .panel-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--panel-heading-border);
+            background: var(--panel-heading-bg);
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: 0.01em;
+        }
+
+        .panel-tag {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--panel-tag-text);
+            border: 1px solid var(--panel-tag-border);
+            background: var(--panel-tag-bg);
+            border-radius: 999px;
+            padding: 5px 10px;
+        }
+
+        .clipboard-content {
+            font-family: "JetBrains Mono", "SF Mono", "Monaco", "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.68;
+            padding: clamp(10px, 1.3vw, 14px);
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text-0);
+            min-height: 0;
+        }
+
+        .clipboard-image-wrapper {
+            height: 100%;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clipboard-image {
+            max-width: 100%;
+            max-height: 50vh;
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            background: var(--surface-soft);
+        }
+
+        .clipboard-content.empty {
+            display: grid;
+            place-items: center;
+            color: var(--text-2);
+            font-family: "SF Pro Text", "PingFang SC", sans-serif;
+        }
+
+        .empty-state {
+            border: 1px dashed var(--empty-border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            font-size: 14px;
+            text-align: center;
+            width: min(450px, 92%);
+            background: var(--empty-bg);
+            color: var(--empty-text);
+        }
+
+        .editor-shell {
+            min-height: 0;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        textarea {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: clamp(10px, 1.3vw, 14px);
+            resize: none;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-0);
+            font-family: "JetBrains Mono", "SF Mono", "Monaco", "Courier New", monospace;
+            min-height: 100%;
+        }
+
+        textarea:focus {
+            outline: none;
+        }
+
+        textarea::placeholder {
+            color: var(--text-2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .receive-actions {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px 10px;
+            border-top: 1px solid var(--actions-border);
+            background: var(--actions-bg);
+        }
+
+        .receive-actions .btn-copy {
+            margin-left: auto;
+        }
+
+        .receive-actions #copyStatus {
+            position: absolute;
+            right: 12px;
+            bottom: calc(100% + 8px);
+            min-width: 0;
+            max-width: min(220px, calc(100% - 24px));
+        }
+
+        .send-actions {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 8px 10px 10px;
+            border-top: 1px solid var(--actions-border);
+            background: var(--actions-bg);
+        }
+
+        .send-actions #pushStatus {
+            position: absolute;
+            right: 12px;
+            bottom: calc(100% + 8px);
+            min-width: 0;
+            max-width: min(220px, calc(100% - 24px));
+        }
+
+        .timestamp {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--timestamp-text);
+            border: 1px solid var(--timestamp-border);
+            background: var(--timestamp-bg);
+            border-radius: 999px;
+            padding: 7px 10px;
+            margin-right: auto;
+        }
+
+        button {
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            min-height: 38px;
+            padding: 9px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-primary,
+        .btn-copy {
+            color: #fff;
+            background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+            box-shadow: none;
+        }
+
+        .btn-primary:hover:not(:disabled),
+        .btn-copy:hover:not(:disabled) {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            color: var(--btn-secondary-text);
+            border-color: var(--btn-secondary-border);
+            background: var(--btn-secondary-bg);
+        }
+
+        .btn-secondary:hover {
+            color: var(--text-0);
+            background: var(--btn-secondary-hover-bg);
+        }
+
+        .status-message {
+            display: none;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            border: 1px solid transparent;
+            line-height: 1.35;
+            min-width: 98px;
+        }
+
+        .status-message.success {
+            display: block;
+            color: #146643;
+            background: #e8f9f1;
+            border-color: #9fdbbf;
+        }
+
+        .status-message.error {
+            display: block;
+            color: #8f3333;
+            background: #fff0f0;
+            border-color: #f1b4b4;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(103, 142, 188, 0.35);
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(88, 132, 184, 0.58);
+        }
+
+        @media (max-width: 920px) {
+            .app-shell {
+                border-radius: 12px;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+
+            .tabs {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                flex-direction: row;
+                align-items: stretch;
+                padding: 8px;
+                gap: 8px;
+                overflow-x: auto;
+            }
+
+            .tabs-headline,
+            .tabs-note {
+                display: none;
+            }
+
+            .tab {
+                min-width: 180px;
+                text-align: center;
+            }
+
+            .tab:hover {
+                transform: none;
+            }
+
+            .tab-sub {
+                margin-top: 4px;
+            }
+        }
+
+        @media (max-width: 620px) {
+            body {
+                --page-pad-top: max(4px, env(safe-area-inset-top));
+                --page-pad-right: max(4px, env(safe-area-inset-right));
+                --page-pad-bottom: max(6px, env(safe-area-inset-bottom));
+                --page-pad-left: max(4px, env(safe-area-inset-left));
+            }
+
+            .app-shell {
+                border-radius: 8px;
+            }
+
+            .topbar {
+                padding: 8px 10px;
+                gap: 8px;
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+            }
+
+            .brand {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .brand-badge {
+                width: 32px;
+                height: 32px;
+                border-radius: 10px;
+                font-size: 16px;
+            }
+
+            .brand-title {
+                font-size: 15px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .brand-subtitle {
+                display: none;
+            }
+
+            .status-pill {
+                padding: 7px 12px;
+                max-width: 45vw;
+            }
+
+            .workspace {
+                padding: 8px;
+            }
+
+            .button-group {
+                align-items: center;
+            }
+
+            .timestamp {
+                flex: 1 1 100%;
+                margin-right: 0;
+            }
+
+            .receive-actions {
+                padding: 8px;
+            }
+
+            .receive-actions .timestamp {
+                flex: 0 1 auto;
+            }
+
+            .receive-actions .btn-copy {
+                flex: 0 0 auto;
+                width: auto;
+                min-width: 110px;
+            }
+
+            .receive-actions #copyStatus {
+                right: 10px;
+                max-width: min(200px, calc(100% - 20px));
+            }
+
+            .send-actions {
+                padding: 8px;
+            }
+
+            .send-actions .btn-primary,
+            .send-actions .btn-secondary {
+                flex: 1 1 calc(50% - 6px);
+                min-width: 110px;
+            }
+
+            .send-actions #pushStatus {
+                right: 10px;
+                max-width: min(200px, calc(100% - 20px));
+            }
+
+            .tab {
+                min-width: 156px;
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .topbar {
+                grid-template-columns: 1fr;
+            }
+
+            .status-pill {
+                justify-self: start;
+                max-width: 100%;
+            }
+
+            .brand-title {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <div class="topbar">
+            <div class="brand">
+                <div class="brand-badge">✦</div>
+                <div class="brand-copy">
+                    <div class="brand-title" data-i18n="brand.title">Pastry · 剪贴板同步</div>
+                    <div class="brand-subtitle" data-i18n="brand.subtitle">在你的设备间快速、安全地共享文本内容</div>
+                </div>
+            </div>
+            <div class="status-pill">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText" data-status-text>连接中...</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <div class="tabs-headline" data-i18n="tabs.headline">工作区</div>
+                <button class="tab active" type="button" onclick="switchTab('receive', this)">
+                    <span class="tab-main" data-i18n="tabs.receive.title">接收内容</span>
+                    <span class="tab-sub" data-i18n="tabs.receive.subtitle">查看来自其他设备的最新同步</span>
+                </button>
+                <button class="tab" type="button" onclick="switchTab('send', this)">
+                    <span class="tab-main" data-i18n="tabs.send.title">发送内容</span>
+                    <span class="tab-sub" data-i18n="tabs.send.subtitle">推送文本、图片、链接与代码片段</span>
+                </button>
+                <div class="tabs-note" data-i18n="tabs.note">支持实时同步与一键复制，状态变化自动提示。</div>
+            </div>
+
+            <div class="workspace">
+                <div id="receiveTab" class="tab-content active receive-tab">
+                    <div class="panel receive-panel">
+                        <div class="panel-heading">
+                            <span class="panel-title" data-i18n="receive.panelTitle">客户端最新内容</span>
+                            <span class="panel-tag" data-i18n="receive.panelTag">实时更新</span>
+                        </div>
+                        <div class="clipboard-content empty" id="latestClipboard">
+                            <div class="empty-state" data-i18n="receive.empty">暂无内容</div>
+                        </div>
+                        <div class="receive-actions">
+                            <div class="timestamp" id="timestamp" style="display: none;"></div>
+                            <button class="btn-copy" type="button" onclick="copyToClipboard()" data-i18n="actions.copy">复制到剪切板</button>
+                            <div class="status-message" id="copyStatus"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sendTab" class="tab-content send-tab">
+                    <div class="panel editor-shell">
+                        <div class="panel-heading">
+                            <span class="panel-title" data-i18n="send.panelTitle">编辑并发送</span>
+                            <span class="panel-tag" data-i18n="send.panelTag">安全通道</span>
+                        </div>
+                        <textarea id="pushContent" data-i18n-placeholder="send.placeholder" placeholder="输入要发送的文本、链接或代码片段..."></textarea>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelected(event)">
+                        <div class="send-actions">
+                            <button class="btn-secondary" type="button" id="imageBtn" onclick="triggerImagePicker()">选择图片</button>
+                            <button class="btn-primary" type="button" id="sendBtn" onclick="pushToClipboard()" disabled data-i18n="actions.send">发送</button>
+                            <button class="btn-secondary" type="button" onclick="clearInput()" data-i18n="actions.clear">清空</button>
+                            <div class="status-message" id="pushStatus"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const RUNTIME_CONFIG = window.__PASTRY_WEB_CONFIG__ || {};
+        const I18N = {
+            zh: {
+                'meta.title': 'Pastry - 剪贴板同步',
+                'brand.title': 'Pastry · 剪贴板同步',
+                'brand.subtitle': '在你的设备间快速、安全地共享文本与图片',
+                'tabs.headline': '工作区',
+                'tabs.receive.title': '接收内容',
+                'tabs.receive.subtitle': '查看来自其他设备的最新同步',
+                'tabs.send.title': '发送内容',
+                'tabs.send.subtitle': '推送文本、图片、链接与代码片段',
+                'tabs.note': '支持实时同步与一键复制，状态变化自动提示。',
+                'receive.panelTitle': '客户端最新内容',
+                'receive.panelTag': '实时更新',
+                'receive.empty': '暂无内容',
+                'send.panelTitle': '编辑并发送',
+                'send.panelTag': '安全通道',
+                'send.placeholder': '输入要发送的文本、链接或代码片段（或选择图片）...',
+                'actions.copy': '复制到剪切板',
+                'actions.send': '发送',
+                'actions.clear': '清空',
+                'actions.pickImage': '选择图片',
+                'actions.clearImage': '移除图片',
+                'status.connecting': '连接中...',
+                'status.connected': '已连接',
+                'status.disconnected': '连接断开',
+                'status.noContent': '没有可复制的内容',
+                'status.copySuccess': '已复制到剪切板',
+                'status.copyFailed': '复制失败',
+                'status.emptyInput': '请输入内容或选择图片',
+                'status.sendSuccess': '发送成功',
+                'status.sendFailed': '发送失败',
+                'status.imageSelected': '图片已选中，可直接发送',
+                'status.imageReadFailed': '读取图片失败',
+                'status.imageCopyUnsupported': '当前浏览器不支持复制图片',
+                'status.imageTooLarge': '图片过大，请换一张或先压缩后再试',
+            },
+            en: {
+                'meta.title': 'Pastry - Clipboard Sync',
+                'brand.title': 'Pastry · Clipboard Sync',
+                'brand.subtitle': 'Quickly and securely share text and images across devices',
+                'tabs.headline': 'Workspace',
+                'tabs.receive.title': 'Receive',
+                'tabs.receive.subtitle': 'View the latest sync from other devices',
+                'tabs.send.title': 'Send',
+                'tabs.send.subtitle': 'Push text, images, links, and code snippets',
+                'tabs.note': 'Real-time sync and one-click copy with clear status feedback.',
+                'receive.panelTitle': 'Latest Client Content',
+                'receive.panelTag': 'Live',
+                'receive.empty': 'No content yet',
+                'send.panelTitle': 'Edit and Send',
+                'send.panelTag': 'Secure Channel',
+                'send.placeholder': 'Type text, links, or code snippets (or pick an image)...',
+                'actions.copy': 'Copy to Clipboard',
+                'actions.send': 'Send',
+                'actions.clear': 'Clear',
+                'actions.pickImage': 'Pick Image',
+                'actions.clearImage': 'Remove Image',
+                'status.connecting': 'Connecting...',
+                'status.connected': 'Connected',
+                'status.disconnected': 'Disconnected',
+                'status.noContent': 'Nothing to copy',
+                'status.copySuccess': 'Copied to clipboard',
+                'status.copyFailed': 'Copy failed',
+                'status.emptyInput': 'Please enter text or pick an image',
+                'status.sendSuccess': 'Sent successfully',
+                'status.sendFailed': 'Send failed',
+                'status.imageSelected': 'Image selected and ready to send',
+                'status.imageReadFailed': 'Failed to read image',
+                'status.imageCopyUnsupported': 'This browser cannot copy images',
+                'status.imageTooLarge': 'Image is too large, please compress and retry',
+            },
+        };
+
+        const resolveLanguage = (code) => {
+            if (typeof code !== 'string') {
+                return 'zh';
+            }
+
+            return code.toLowerCase().startsWith('en') ? 'en' : 'zh';
+        };
+
+        const activeLang = resolveLanguage(RUNTIME_CONFIG.language);
+        const activeLocale = activeLang === 'en' ? 'en-US' : 'zh-CN';
+        let connectionState = 'connecting';
+        let ws = null;
+        let reconnectTimer = null;
+        let currentClipboard = { clipType: 'text', content: '', imageDataUrl: null };
+        let pendingImagePayload = null;
+        const statusTimers = {};
+        const MAX_SYNC_IMAGE_EDGE = 1600;
+        const MAX_SYNC_IMAGE_DATA_URL_LENGTH = 2_000_000;
+        const PRIMARY_IMAGE_QUALITY = 0.82;
+        const FALLBACK_IMAGE_QUALITY = 0.68;
+
+        function t(key) {
+            return I18N[activeLang]?.[key] || I18N.zh[key] || key;
+        }
+
+        function renderEmptyState() {
+            return `<div class="empty-state">${t('receive.empty')}</div>`;
+        }
+
+        function fitDimensions(width, height, maxEdge) {
+            const safeWidth = Math.max(1, Number(width) || 1);
+            const safeHeight = Math.max(1, Number(height) || 1);
+            const currentMax = Math.max(safeWidth, safeHeight);
+
+            if (currentMax <= maxEdge) {
+                return { width: safeWidth, height: safeHeight };
+            }
+
+            const scale = maxEdge / currentMax;
+            return {
+                width: Math.max(1, Math.round(safeWidth * scale)),
+                height: Math.max(1, Math.round(safeHeight * scale)),
+            };
+        }
+
+        function readFileAsDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const dataUrl = typeof reader.result === 'string' ? reader.result : null;
+                    if (!dataUrl) {
+                        reject(new Error('invalid_data_url'));
+                        return;
+                    }
+                    resolve(dataUrl);
+                };
+                reader.onerror = () => reject(new Error('file_read_failed'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function loadImageElement(dataUrl) {
+            return new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve(image);
+                image.onerror = () => reject(new Error('image_decode_failed'));
+                image.src = dataUrl;
+            });
+        }
+
+        async function compressImageFile(file) {
+            const sourceDataUrl = await readFileAsDataUrl(file);
+            const sourceImage = await loadImageElement(sourceDataUrl);
+            const sourceWidth = sourceImage.naturalWidth || sourceImage.width;
+            const sourceHeight = sourceImage.naturalHeight || sourceImage.height;
+            const { width, height } = fitDimensions(sourceWidth, sourceHeight, MAX_SYNC_IMAGE_EDGE);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext('2d');
+            if (!context) {
+                throw new Error('canvas_context_failed');
+            }
+
+            context.drawImage(sourceImage, 0, 0, width, height);
+
+            let dataUrl = canvas.toDataURL('image/jpeg', PRIMARY_IMAGE_QUALITY);
+            if (dataUrl.length > MAX_SYNC_IMAGE_DATA_URL_LENGTH) {
+                dataUrl = canvas.toDataURL('image/jpeg', FALLBACK_IMAGE_QUALITY);
+            }
+
+            if (dataUrl.length > MAX_SYNC_IMAGE_DATA_URL_LENGTH) {
+                throw new Error('image_too_large');
+            }
+
+            return { dataUrl, width, height };
+        }
+
+        function updateImageActionButton() {
+            const button = document.getElementById('imageBtn');
+            if (!button) {
+                return;
+            }
+
+            button.textContent = pendingImagePayload
+                ? t('actions.clearImage')
+                : t('actions.pickImage');
+        }
+
+        function applyStaticTranslations() {
+            document.documentElement.lang = activeLang === 'en' ? 'en' : 'zh-CN';
+            document.title = t('meta.title');
+
+            document.querySelectorAll('[data-i18n]').forEach((node) => {
+                const key = node.getAttribute('data-i18n');
+                if (key) {
+                    node.textContent = t(key);
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
+                const key = node.getAttribute('data-i18n-placeholder');
+                if (key) {
+                    node.setAttribute('placeholder', t(key));
+                }
+            });
+
+            const contentDiv = document.getElementById('latestClipboard');
+            if (contentDiv.classList.contains('empty')) {
+                contentDiv.innerHTML = renderEmptyState();
+            }
+
+            updateImageActionButton();
+        }
+
+        function setConnectionState(state) {
+            connectionState = state;
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = t(`status.${connectionState}`);
+        }
+
+        function switchTab(tabName, tabButton) {
+            document.querySelectorAll('.tab').forEach((tab) => {
+                tab.classList.remove('active');
+            });
+            tabButton.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach((content) => {
+                content.classList.remove('active');
+            });
+
+            if (tabName === 'receive') {
+                document.getElementById('receiveTab').classList.add('active');
+            } else {
+                document.getElementById('sendTab').classList.add('active');
+            }
+        }
+
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            setConnectionState('connecting');
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById('statusIndicator').classList.add('connected');
+                setConnectionState('connected');
+                document.getElementById('sendBtn').disabled = false;
+                ws.send(JSON.stringify({ type: 'get_latest' }));
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'clipboard_update') {
+                        updateClipboard(data);
+                    }
+                } catch (error) {
+                    console.error('Parse message error:', error);
+                }
+            };
+
+            ws.onclose = () => {
+                document.getElementById('statusIndicator').classList.remove('connected');
+                setConnectionState('disconnected');
+                document.getElementById('sendBtn').disabled = true;
+                reconnectTimer = setTimeout(connect, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function updateClipboard(payload) {
+            const clipType = payload?.clip_type === 'image' ? 'image' : 'text';
+            const content = typeof payload?.content === 'string' ? payload.content : '';
+            const imageDataUrl = typeof payload?.image_data_url === 'string' ? payload.image_data_url : null;
+            const timestamp = payload?.timestamp;
+
+            currentClipboard = { clipType, content, imageDataUrl };
+            const contentDiv = document.getElementById('latestClipboard');
+            const timestampDiv = document.getElementById('timestamp');
+
+            if (clipType === 'image' && imageDataUrl) {
+                contentDiv.innerHTML = '';
+                const wrapper = document.createElement('div');
+                wrapper.className = 'clipboard-image-wrapper';
+
+                const image = document.createElement('img');
+                image.className = 'clipboard-image';
+                image.src = imageDataUrl;
+                image.alt = 'clipboard image';
+
+                wrapper.appendChild(image);
+                contentDiv.appendChild(wrapper);
+                contentDiv.classList.remove('empty');
+            } else if (content) {
+                contentDiv.textContent = content;
+                contentDiv.classList.remove('empty');
+            } else {
+                contentDiv.innerHTML = renderEmptyState();
+                contentDiv.classList.add('empty');
+                timestampDiv.style.display = 'none';
+                return;
+            }
+
+            if (timestamp) {
+                const date = new Date(timestamp);
+                timestampDiv.textContent = date.toLocaleString(activeLocale);
+                timestampDiv.style.display = 'flex';
+            } else {
+                timestampDiv.style.display = 'none';
+            }
+        }
+
+        function copyToClipboard() {
+            if (!currentClipboard.content && !currentClipboard.imageDataUrl) {
+                showStatus('copyStatus', t('status.noContent'), 'error');
+                return;
+            }
+
+            if (currentClipboard.clipType === 'image' && currentClipboard.imageDataUrl) {
+                if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+                    showStatus('copyStatus', t('status.imageCopyUnsupported'), 'error');
+                    return;
+                }
+
+                fetch(currentClipboard.imageDataUrl)
+                    .then((response) => response.blob())
+                    .then((blob) => navigator.clipboard.write([
+                        new ClipboardItem({ [blob.type || 'image/png']: blob }),
+                    ]))
+                    .then(() => showStatus('copyStatus', t('status.copySuccess'), 'success'))
+                    .catch(() => showStatus('copyStatus', t('status.copyFailed'), 'error'));
+                return;
+            }
+
+            navigator.clipboard.writeText(currentClipboard.content)
+                .then(() => showStatus('copyStatus', t('status.copySuccess'), 'success'))
+                .catch(() => showStatus('copyStatus', t('status.copyFailed'), 'error'));
+        }
+
+        function pushToClipboard() {
+            const content = document.getElementById('pushContent').value;
+            const hasImage = Boolean(pendingImagePayload?.dataUrl);
+            const hasText = Boolean(content.trim());
+
+            if (!hasImage && !hasText) {
+                showStatus('pushStatus', t('status.emptyInput'), 'error');
+                return;
+            }
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                showStatus('pushStatus', t('status.disconnected'), 'error');
+                return;
+            }
+
+            try {
+                const payload = hasImage
+                    ? {
+                        type: 'push_clipboard',
+                        clip_type: 'image',
+                        content: pendingImagePayload.name || 'image',
+                        image_data_url: pendingImagePayload.dataUrl,
+                        image_width: pendingImagePayload.width,
+                        image_height: pendingImagePayload.height,
+                    }
+                    : {
+                        type: 'push_clipboard',
+                        clip_type: 'text',
+                        content,
+                    };
+
+                ws.send(JSON.stringify(payload));
+
+                showStatus('pushStatus', t('status.sendSuccess'), 'success');
+                document.getElementById('pushContent').value = '';
+                clearSelectedImage();
+            } catch (error) {
+                showStatus('pushStatus', t('status.sendFailed'), 'error');
+                console.error('Send error:', error);
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('pushContent').value = '';
+            clearSelectedImage();
+            document.getElementById('pushStatus').className = 'status-message';
+        }
+
+        function triggerImagePicker() {
+            if (pendingImagePayload) {
+                clearSelectedImage();
+                return;
+            }
+
+            document.getElementById('imageInput').click();
+        }
+
+        function clearSelectedImage() {
+            pendingImagePayload = null;
+            const input = document.getElementById('imageInput');
+            if (input) {
+                input.value = '';
+            }
+            updateImageActionButton();
+        }
+
+        async function handleImageSelected(event) {
+            const file = event?.target?.files?.[0];
+            if (!file) {
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                showStatus('pushStatus', t('status.imageReadFailed'), 'error');
+                clearSelectedImage();
+                return;
+            }
+
+            try {
+                const compressed = await compressImageFile(file);
+                pendingImagePayload = {
+                    name: file.name,
+                    dataUrl: compressed.dataUrl,
+                    width: compressed.width,
+                    height: compressed.height,
+                };
+                document.getElementById('pushContent').value = '';
+                updateImageActionButton();
+                showStatus('pushStatus', t('status.imageSelected'), 'success');
+            } catch (error) {
+                const statusKey = error?.message === 'image_too_large'
+                    ? 'status.imageTooLarge'
+                    : 'status.imageReadFailed';
+                showStatus('pushStatus', t(statusKey), 'error');
+                clearSelectedImage();
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const statusDiv = document.getElementById(elementId);
+            statusDiv.textContent = message;
+            statusDiv.style.display = '';
+            statusDiv.className = `status-message ${type}`;
+
+            if (statusTimers[elementId]) {
+                clearTimeout(statusTimers[elementId]);
+            }
+
+            statusTimers[elementId] = setTimeout(() => {
+                statusDiv.className = 'status-message';
+            }, 3000);
+        }
+
+        applyStaticTranslations();
+        setConnectionState(connectionState);
+        connect();
+
+        window.addEventListener('beforeunload', () => {
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+            }
+            if (ws) {
+                ws.close();
+            }
+        });
+    </script>
+</body>
+</html>

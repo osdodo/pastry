@@ -1,0 +1,1 @@
+output = encodeURIComponent(input);

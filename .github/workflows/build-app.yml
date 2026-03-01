@@ -1,0 +1,109 @@
+name: Build App
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "*"
+      - "*/*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS x86_64
+            os: macos-15-intel
+            macos_arch: x86_64
+          - name: macOS arm64
+            os: macos-15
+            macos_arch: arm64
+          - name: Linux
+            os: ubuntu-latest
+          - name: Windows
+            os: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build macOS app
+        if: runner.os == 'macOS'
+        run: ./build-macos-app.sh ${{ matrix.macos_arch }}
+        shell: bash
+
+      - name: Upload macOS artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pastry-macos-${{ matrix.macos_arch }}
+          path: target/release/Pastry-*-macos-${{ matrix.macos_arch }}.zip
+          if-no-files-found: error
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            libxdo-dev
+
+      - name: Build Linux app
+        if: runner.os == 'Linux'
+        run: ./build-linux-app.sh
+        shell: bash
+
+      - name: Upload Linux artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pastry-linux
+          path: target/linux-release/Pastry-*-linux.tar.gz
+          if-no-files-found: error
+
+      - name: Build Windows app
+        if: runner.os == 'Windows'
+        run: ./build-windows-app.ps1
+        shell: pwsh
+
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pastry-windows
+          path: target/windows-release/Pastry-*-windows.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.tar.gz
+          fail_on_unmatched_files: true

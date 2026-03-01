@@ -1,0 +1,472 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
+pub enum Language {
+    #[default]
+    Zh,
+    En,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Text {
+    Search,
+    SearchScripts,
+    NoScriptsYetAdd,
+    NoScriptsMatch,
+    NoScriptsYetNew,
+    NewScript,
+    EditScript,
+    ScriptName,
+    ScriptCode,
+    ImageLoadFailed,
+    ScriptExecResult,
+    Save,
+    Copy,
+    Copied,
+    Recent,
+    Favorite,
+    NoFavoritesYet,
+    HistoryEmptyHint,
+    NoRecordsMatch,
+    Compressing,
+    SavedTo,
+    CompressFailed,
+    UnknownScript,
+    ShowClipboard,
+    Quit,
+    Settings,
+    Language,
+    Theme,
+    Light,
+    Dark,
+    Startup,
+    StartHidden,
+    LanSync,
+    EnableLanSync,
+    WebServiceReady,
+    ScanQrToAccess,
+    EnsureSameLan,
+    NoLanAddressAvailable,
+    CheckWifiVpnRetry,
+    TrayBuildFailed,
+    IconCreateFailed,
+    HotkeyManagerCreateFailed,
+    HotkeyRegisterFailed,
+    JustNow,
+    MinutesAgoFmt,
+    HoursAgoFmt,
+    DaysAgoFmt,
+    ScriptWriteFailedFmt,
+    ScriptDeleteFailedFmt,
+    ScriptUpdateFailedFmt,
+    ScriptNotFound,
+    FileReadFailedFmt,
+    JsonParseFailedFmt,
+    SerializationFailedFmt,
+    FileWriteFailedFmt,
+    Cancel,
+    Delete,
+    ConfirmDeleteTitle,
+    ConfirmDeleteMessage,
+
+    // Script Names
+    ScriptBase64Decode,
+    ScriptBase64Encode,
+    ScriptCamelCase,
+    ScriptExtractEmails,
+    ScriptKebabCase,
+    ScriptMd5Hash,
+    ScriptPascalCase,
+    ScriptSha256Hash,
+    ScriptSnakeCase,
+    ScriptTimestampToDate,
+    ScriptUpperSnakeCase,
+    ScriptUrlDecode,
+    ScriptUrlEncode,
+    ScriptWordCount,
+    ScriptManagerTitle,
+    // Workflow Manager
+    SearchWorkflows,
+    NoWorkflowsYetCreateFirst,
+    NoWorkflowsMatchSearch,
+    Enabled,
+    Disabled,
+    Workflows,
+    DeleteWorkflow,
+    DeleteWorkflowConfirm,
+
+    // Workflow Editor
+    Hotkey,
+    ClickToRecord,
+    HotkeyRecordHint,
+    Script,
+    FilePath,
+    FilePathPlaceholder,
+    FilePathHintValid,
+    FilePathHintEmpty,
+    FilePathHintLooksLikeFolder,
+    FilePathHintParentMissing,
+    QuickPath,
+    Desktop,
+    Downloads,
+    BrowseFolder,
+    NodeTitle,
+    ClipboardNodeDescription,
+    ExecutionLogs,
+    Run,
+    Triggers,
+    DataSource,
+    Transform,
+    OutputGroup,
+    EditDetails,
+    DeleteNode,
+    ClearConnections,
+    WorkflowName,
+
+    // Node Kind Names
+    NodeKindHotkey,
+    NodeKindScript,
+    NodeKindClipboard,
+    NodeKindFileWrite,
+    NodeKindClipboardCard,
+
+    // Port Names
+    PortFlow,
+    PortIn,
+    PortOut,
+    ConfirmUnfavoriteTitle,
+    ConfirmUnfavoriteMessage,
+}
+
+static CURRENT_LANGUAGE: std::sync::OnceLock<std::sync::RwLock<Language>> =
+    std::sync::OnceLock::new();
+
+pub fn current() -> Language {
+    if let Some(lock) = CURRENT_LANGUAGE.get() {
+        match lock.read() {
+            Ok(g) => *g,
+            Err(_) => Language::default(),
+        }
+    } else {
+        CURRENT_LANGUAGE.get_or_init(|| std::sync::RwLock::new(Language::default()));
+        Language::default()
+    }
+}
+
+pub fn set_current(lang: Language) {
+    if let Some(lock) = CURRENT_LANGUAGE.get() {
+        if let Ok(mut g) = lock.write() {
+            *g = lang;
+        }
+    } else {
+        CURRENT_LANGUAGE.get_or_init(|| std::sync::RwLock::new(lang));
+    }
+}
+
+pub fn tr(text: Text) -> &'static str {
+    let lang = current();
+    match lang {
+        Language::Zh => match text {
+            Text::Search => "搜索",
+            Text::SearchScripts => "搜索脚本...",
+            Text::NoScriptsYetAdd => "还没有脚本，请先添加",
+            Text::NoScriptsMatch => "没有匹配的脚本",
+            Text::NoScriptsYetNew => "还没有脚本，点击\"新建\"开始创建",
+            Text::NewScript => "新建脚本",
+            Text::EditScript => "编辑脚本",
+            Text::ScriptName => "脚本名称",
+            Text::ScriptCode => "脚本代码",
+            Text::ImageLoadFailed => "图片加载失败",
+            Text::ScriptExecResult => "脚本执行结果",
+            Text::Save => "保存",
+            Text::Copy => "复制",
+            Text::Copied => "已复制",
+            Text::Recent => "最近",
+            Text::Favorite => "收藏",
+            Text::NoFavoritesYet => "还没有收藏的内容",
+            Text::HistoryEmptyHint => "复制内容后会自动记录在这里...",
+            Text::NoRecordsMatch => "没有匹配的记录",
+            Text::Compressing => "正在压缩...",
+            Text::SavedTo => "已保存到:",
+            Text::CompressFailed => "压缩失败",
+            Text::UnknownScript => "未知脚本",
+            Text::ShowClipboard => "主界面",
+            Text::Quit => "退出",
+            Text::Settings => "设置",
+            Text::Language => "语言",
+            Text::Theme => "主题",
+            Text::Light => "浅色",
+            Text::Dark => "深色",
+            Text::Startup => "启动",
+            Text::StartHidden => "启动时隐藏窗口",
+            Text::LanSync => "局域网同步",
+            Text::EnableLanSync => "开启局域网同步",
+            Text::WebServiceReady => "服务已就绪",
+            Text::ScanQrToAccess => "扫描二维码访问",
+            Text::EnsureSameLan => "请确保设备与电脑处于同一局域网",
+            Text::NoLanAddressAvailable => "未检测到可用局域网地址",
+            Text::CheckWifiVpnRetry => "请检查 Wi-Fi / VPN 连接后重试",
+            Text::TrayBuildFailed => "无法创建托盘图标",
+            Text::IconCreateFailed => "无法创建图标",
+            Text::HotkeyManagerCreateFailed => "无法创建热键管理器",
+            Text::HotkeyRegisterFailed => "无法注册热键",
+            Text::JustNow => "刚刚",
+            Text::MinutesAgoFmt => "{}分钟前",
+            Text::HoursAgoFmt => "{}小时前",
+            Text::DaysAgoFmt => "{}天前",
+            Text::ScriptWriteFailedFmt => "写入脚本文件失败: {}",
+            Text::ScriptDeleteFailedFmt => "删除脚本文件失败: {}",
+            Text::ScriptUpdateFailedFmt => "更新脚本文件失败: {}",
+            Text::ScriptNotFound => "脚本不存在",
+            Text::FileReadFailedFmt => "读取文件失败 {file}: {err}",
+            Text::JsonParseFailedFmt => "解析 JSON 失败 {file}: {err}",
+            Text::SerializationFailedFmt => "序列化失败: {err}",
+            Text::FileWriteFailedFmt => "写入文件失败 {file}: {err}",
+            Text::Cancel => "取消",
+            Text::Delete => "删除",
+            Text::ConfirmDeleteTitle => "确认删除",
+            Text::ConfirmDeleteMessage => "确定要删除吗？此操作无法撤销。",
+            Text::ScriptBase64Decode => "Base64 解码",
+            Text::ScriptBase64Encode => "Base64 编码",
+            Text::ScriptCamelCase => "小驼峰命名",
+            Text::ScriptExtractEmails => "提取邮箱",
+            Text::ScriptKebabCase => "短横线命名",
+            Text::ScriptMd5Hash => "MD5 哈希",
+            Text::ScriptPascalCase => "大驼峰命名",
+            Text::ScriptSha256Hash => "SHA256 哈希",
+            Text::ScriptSnakeCase => "下划线命名",
+            Text::ScriptTimestampToDate => "时间戳转日期",
+            Text::ScriptUpperSnakeCase => "大写下划线命名",
+            Text::ScriptUrlDecode => "URL 解码",
+            Text::ScriptUrlEncode => "URL 编码",
+            Text::ScriptWordCount => "字数统计",
+            Text::ScriptManagerTitle => "脚本管理",
+            Text::SearchWorkflows => "搜索工作流...",
+            Text::NoWorkflowsYetCreateFirst => "还没有工作流，创建你的第一个工作流吧！",
+            Text::NoWorkflowsMatchSearch => "没有匹配的工作流。",
+            Text::Enabled => "已启用",
+            Text::Disabled => "已禁用",
+            Text::Workflows => "工作流",
+            Text::DeleteWorkflow => "删除工作流",
+            Text::DeleteWorkflowConfirm => "确定要删除此工作流吗？此操作无法撤销。",
+            Text::ClickToRecord => "点击录制...",
+            Text::HotkeyRecordHint => "按下任意键组合设置热键。输入框必须获得焦点。",
+            Text::Script => "脚本",
+            Text::FilePath => "文件路径",
+            Text::FilePathPlaceholder => "output.txt",
+            Text::FilePathHintValid => "路径有效，可写入。",
+            Text::FilePathHintEmpty => "请先填写文件路径。",
+            Text::FilePathHintLooksLikeFolder => "当前看起来是文件夹路径，请补充文件名。",
+            Text::FilePathHintParentMissing => "父目录不存在，请先创建目录或更换路径。",
+            Text::QuickPath => "快速选择",
+            Text::Desktop => "桌面",
+            Text::Downloads => "下载目录",
+            Text::BrowseFolder => "选择文件夹...",
+            Text::NodeTitle => "节点标题",
+            Text::ClipboardNodeDescription => "从剪贴板读取最新的内容。",
+            Text::ExecutionLogs => "执行日志",
+            Text::Run => "运行",
+            Text::Triggers => "触发器",
+            Text::DataSource => "数据源",
+            Text::Transform => "转换",
+            Text::OutputGroup => "输出",
+            Text::EditDetails => "编辑详情",
+            Text::DeleteNode => "删除节点",
+            Text::ClearConnections => "清除连接",
+            Text::WorkflowName => "工作流名称",
+            Text::Hotkey => "热键",
+            Text::NodeKindHotkey => "热键",
+            Text::NodeKindScript => "脚本",
+            Text::NodeKindClipboard => "剪贴板",
+            Text::NodeKindFileWrite => "写入文件",
+            Text::NodeKindClipboardCard => "剪贴板卡片",
+            Text::PortFlow => "流程",
+            Text::PortIn => "输入",
+            Text::PortOut => "输出",
+            Text::ConfirmUnfavoriteTitle => "取消收藏",
+            Text::ConfirmUnfavoriteMessage => "确定要取消收藏吗？",
+        },
+        Language::En => match text {
+            Text::Search => "Search",
+            Text::SearchScripts => "Search scripts...",
+            Text::NoScriptsYetAdd => "No scripts yet, please add",
+            Text::NoScriptsMatch => "No matching scripts",
+            Text::NoScriptsYetNew => "No scripts yet, click \"New\" to create",
+            Text::NewScript => "New Script",
+            Text::EditScript => "Edit Script",
+            Text::ScriptName => "Script Name",
+            Text::ScriptCode => "Script Code",
+            Text::ImageLoadFailed => "Image failed to load",
+            Text::ScriptExecResult => "Script output",
+            Text::Save => "Save",
+            Text::Copy => "Copy",
+            Text::Copied => "Copied",
+            Text::Recent => "Recent",
+            Text::Favorite => "Favorite",
+            Text::NoFavoritesYet => "No favorite items yet",
+            Text::HistoryEmptyHint => "Copied content will be recorded here automatically...",
+            Text::NoRecordsMatch => "No matching records",
+            Text::Compressing => "Compressing...",
+            Text::SavedTo => "Saved to:",
+            Text::CompressFailed => "Compression failed",
+            Text::UnknownScript => "Unknown script",
+            Text::ShowClipboard => "Home",
+            Text::Quit => "Quit",
+            Text::Settings => "Settings",
+            Text::Language => "Language",
+            Text::Theme => "Theme",
+            Text::Light => "Light",
+            Text::Dark => "Dark",
+            Text::Startup => "Startup",
+            Text::StartHidden => "Hide on startup",
+            Text::LanSync => "LAN Sync",
+            Text::EnableLanSync => "Enable LAN sync",
+            Text::WebServiceReady => "Service ready",
+            Text::ScanQrToAccess => "Scan QR code to access",
+            Text::EnsureSameLan => "Make sure your device and computer are on the same LAN",
+            Text::NoLanAddressAvailable => "No available LAN address detected",
+            Text::CheckWifiVpnRetry => "Check Wi-Fi / VPN connection and try again",
+            Text::TrayBuildFailed => "Failed to create tray icon",
+            Text::IconCreateFailed => "Failed to create icon",
+            Text::HotkeyManagerCreateFailed => "Failed to create hotkey manager",
+            Text::HotkeyRegisterFailed => "Failed to register hotkey",
+            Text::JustNow => "just now",
+            Text::MinutesAgoFmt => "{} min ago",
+            Text::HoursAgoFmt => "{} h ago",
+            Text::DaysAgoFmt => "{} d ago",
+            Text::ScriptWriteFailedFmt => "Error: failed to write script file: {}",
+            Text::ScriptDeleteFailedFmt => "Error: failed to delete script file: {}",
+            Text::ScriptUpdateFailedFmt => "Error: failed to update script file: {}",
+            Text::ScriptNotFound => "Error: script not found",
+            Text::FileReadFailedFmt => "Error: failed to read file {file}: {err}",
+            Text::JsonParseFailedFmt => "Error: failed to parse JSON {file}: {err}",
+            Text::SerializationFailedFmt => "Error: serialization failed: {err}",
+            Text::FileWriteFailedFmt => "Error: failed to write file {file}: {err}",
+            Text::Cancel => "Cancel",
+            Text::Delete => "Delete",
+            Text::ConfirmDeleteTitle => "Confirm Delete",
+            Text::ConfirmDeleteMessage => {
+                "Are you sure you want to delete? This action cannot be undone."
+            }
+            Text::ScriptBase64Decode => "Base64 Decode",
+            Text::ScriptBase64Encode => "Base64 Encode",
+            Text::ScriptCamelCase => "Camel Case",
+            Text::ScriptExtractEmails => "Extract Emails",
+            Text::ScriptKebabCase => "Kebab Case",
+            Text::ScriptMd5Hash => "MD5 Hash",
+            Text::ScriptPascalCase => "Pascal Case",
+            Text::ScriptSha256Hash => "SHA256 Hash",
+            Text::ScriptSnakeCase => "Snake Case",
+            Text::ScriptTimestampToDate => "Timestamp to Date",
+            Text::ScriptUpperSnakeCase => "Upper Snake Case",
+            Text::ScriptUrlDecode => "URL Decode",
+            Text::ScriptUrlEncode => "URL Encode",
+            Text::ScriptWordCount => "Word Count",
+            Text::ScriptManagerTitle => "Script Manager",
+            Text::SearchWorkflows => "Search workflows...",
+            Text::NoWorkflowsYetCreateFirst => "No workflows yet. Create your first workflow!",
+            Text::NoWorkflowsMatchSearch => "No workflows match your search.",
+            Text::Enabled => "Enabled",
+            Text::Disabled => "Disabled",
+            Text::Workflows => "Workflows",
+            Text::DeleteWorkflow => "Delete Workflow",
+            Text::DeleteWorkflowConfirm => {
+                "Are you sure you want to delete this workflow? This action cannot be undone."
+            }
+            Text::ClickToRecord => "Click to record...",
+            Text::HotkeyRecordHint => {
+                "Press any key combination to set the hotkey. Input field must be focused."
+            }
+            Text::Script => "Script",
+            Text::FilePath => "File Path",
+            Text::FilePathPlaceholder => "output.txt",
+            Text::FilePathHintValid => "Path looks valid and writable.",
+            Text::FilePathHintEmpty => "Please enter a file path.",
+            Text::FilePathHintLooksLikeFolder => "This looks like a folder path. Add a file name.",
+            Text::FilePathHintParentMissing => {
+                "Parent folder does not exist. Create it or choose another path."
+            }
+            Text::QuickPath => "Quick Path",
+            Text::Desktop => "Desktop",
+            Text::Downloads => "Downloads",
+            Text::BrowseFolder => "Folder...",
+            Text::NodeTitle => "Node Title",
+            Text::ClipboardNodeDescription => "Reads the most recent content from the clipboard.",
+            Text::ExecutionLogs => "Execution Logs",
+            Text::Run => "Run",
+            Text::Triggers => "Triggers",
+            Text::DataSource => "Data Source",
+            Text::Transform => "Transform",
+            Text::OutputGroup => "Output",
+            Text::EditDetails => "Edit Details",
+            Text::DeleteNode => "Delete Node",
+            Text::ClearConnections => "Clear Connections",
+            Text::WorkflowName => "Workflow name",
+            Text::Hotkey => "Hotkey",
+            Text::NodeKindHotkey => "Hotkey",
+            Text::NodeKindScript => "Script",
+            Text::NodeKindClipboard => "Clipboard",
+            Text::NodeKindFileWrite => "File Write",
+            Text::NodeKindClipboardCard => "Clipboard Card",
+            Text::PortFlow => "Flow",
+            Text::PortIn => "In",
+            Text::PortOut => "Out",
+            Text::ConfirmUnfavoriteTitle => "Unfavorite",
+            Text::ConfirmUnfavoriteMessage => {
+                "Are you sure you want to remove this from favorites?"
+            }
+        },
+    }
+}
+
+pub fn script_text(id: &str) -> Option<Text> {
+    match id {
+        "base64_decode" => Some(Text::ScriptBase64Decode),
+        "base64_encode" => Some(Text::ScriptBase64Encode),
+        "camel_case" => Some(Text::ScriptCamelCase),
+        "extract_emails" => Some(Text::ScriptExtractEmails),
+        "kebab_case" => Some(Text::ScriptKebabCase),
+        "md5_hash" => Some(Text::ScriptMd5Hash),
+        "pascal_case" => Some(Text::ScriptPascalCase),
+        "sha256_hash" => Some(Text::ScriptSha256Hash),
+        "snake_case" => Some(Text::ScriptSnakeCase),
+        "timestamp_to_date" => Some(Text::ScriptTimestampToDate),
+        "upper_snake_case" => Some(Text::ScriptUpperSnakeCase),
+        "url_decode" => Some(Text::ScriptUrlDecode),
+        "url_encode" => Some(Text::ScriptUrlEncode),
+        "word_count" => Some(Text::ScriptWordCount),
+        _ => None,
+    }
+}
+
+pub fn from_code(code: &str) -> Language {
+    match code {
+        "zh" => Language::Zh,
+        "en" => Language::En,
+        _ => Language::default(),
+    }
+}
+
+pub fn init_with_code(code: Option<&str>) {
+    let lang = match code {
+        Some(c) => from_code(c),
+        None => Language::default(),
+    };
+    set_current(lang);
+}
+
+pub fn to_code(lang: Language) -> &'static str {
+    match lang {
+        Language::Zh => "zh",
+        Language::En => "en",
+    }
+}
+
+impl std::fmt::Display for Language {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Language::Zh => write!(f, "中文"),
+            Language::En => write!(f, "English"),
+        }
+    }
+}
+
+pub const ALL: &[Language] = &[Language::Zh, Language::En];
