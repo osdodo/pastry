@@ -32,6 +32,16 @@ It helps you save clipboard history, run scripts, and build simple workflows.
 - [LAN sync guide](docs/LAN_SYNC_GUIDE.md)
 - [JSONPath guide](docs/JSONPATH_GUIDE.md)
 
+## Troubleshooting (macOS)
+
+If opening `Pastry.app` shows "is damaged and can't be opened. You should move it to the Bin.", run:
+
+```bash
+sudo xattr -r -d com.apple.quarantine /Applications/Pastry.app
+```
+
+Then reopen the app.
+
 ## License
 
 GNU General Public License v3.0.
