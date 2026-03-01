@@ -1,7 +1,4 @@
-<h1 align="center">
-  <img src="assets/logo.png" alt="Pastry logo" width="42" style="vertical-align: middle; margin-right: 8px;" />
-  <span style="vertical-align: middle;">Pastry</span>
-</h1>
+<h1 align="center"><img src="assets/logo.png" alt="Pastry logo" width="42" align="absmiddle" /> Pastry</h1>
 
 Pastry 是一个剪贴板管理应用。它可以帮助你管理剪贴板历史、运行脚本并构建简单工作流。
 

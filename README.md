@@ -1,7 +1,4 @@
-<h1 align="center">
-  <img src="assets/logo.png" alt="Pastry logo" width="42" style="vertical-align: middle; margin-right: 8px;" />
-  <span style="vertical-align: middle;">Pastry</span>
-</h1>
+<h1 align="center"><img src="assets/logo.png" alt="Pastry logo" width="42" align="absmiddle" /> Pastry</h1>
 
 Pastry is a clipboard management application. It helps you manage your clipboard history, run scripts, and build simple workflows.
 
