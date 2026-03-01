@@ -1,14 +1,15 @@
-# Pastry
+<h1 align="center">
+  <img src="assets/logo.png" alt="Pastry logo" width="42" style="vertical-align: middle; margin-right: 8px;" />
+  <span style="vertical-align: middle;">Pastry</span>
+</h1>
+
+Pastry is a clipboard management application. It helps you manage your clipboard history, run scripts, and build simple workflows.
 
 <p align="center">
   <img src="screenshots/1.jpg" alt="Pastry screenshot 1" width="32%" />
   <img src="screenshots/2.jpg" alt="Pastry screenshot 2" width="32%" />
   <img src="screenshots/3.jpg" alt="Pastry screenshot 3" width="32%" />
 </p>
-
-Pastry is a clipboard management application. It helps you manage your clipboard history, run scripts, and build simple workflows.
-
-<p align="center"><a href="README.zh-CN.md">简体中文文档</a></p>
 
 ## Core Features
 
