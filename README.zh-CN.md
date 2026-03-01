@@ -1,7 +1,12 @@
 # Pastry
 
-Pastry 是一个使用 Rust 和 Iced 构建的剪贴板管理与自动化应用。
-它可以帮助你管理剪贴板历史、运行脚本并构建简单工作流。
+<p align="center">
+  <img src="screenshots/1.jpg" alt="Pastry 截图 1" width="32%" />
+  <img src="screenshots/2.jpg" alt="Pastry 截图 2" width="32%" />
+  <img src="screenshots/3.jpg" alt="Pastry 截图 3" width="32%" />
+</p>
+
+Pastry 是一个剪贴板管理应用。它可以帮助你管理剪贴板历史、运行脚本并构建简单工作流。
 
 ## 核心功能
 
