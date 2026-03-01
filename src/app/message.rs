@@ -36,6 +36,7 @@ pub enum Message {
     ShowWindowFromFocus,
     QuitApp,
     WindowOpened(iced::window::Id),
+    RetryInitializeIntegrations,
     WindowFocusLost,
     WindowMoved(f32, f32),
     AnimationTick,

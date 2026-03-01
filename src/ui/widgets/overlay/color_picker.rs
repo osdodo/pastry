@@ -42,6 +42,15 @@ const PADDING: Padding = Padding::new(8.0);
 /// The spacing between the element.
 const SPACING: Pixels = Pixels(10.0);
 
+fn style_or_active<'a>(
+    style_sheet: &'a HashMap<StyleState, Style>,
+    state: &StyleState,
+) -> Option<&'a Style> {
+    style_sheet
+        .get(state)
+        .or_else(|| style_sheet.get(&StyleState::Active))
+}
+
 /// The step value of the keyboard change of the sat/value color values.
 const SAT_VALUE_STEP: f32 = 0.005;
 /// The step value of the keyboard change of the hue color value.
@@ -148,14 +157,14 @@ where
         let hsv_color: Hsv = self.state.color.into();
         let mut color_changed = false;
 
-        let sat_value_bounds = hsv_color_children
-            .next()
-            .expect("widget: Layout should have a sat/value layout")
-            .bounds();
-        let hue_bounds = hsv_color_children
-            .next()
-            .expect("widget: Layout should have a hue layout")
-            .bounds();
+        let Some(sat_value_layout) = hsv_color_children.next() else {
+            return event::Status::Ignored;
+        };
+        let sat_value_bounds = sat_value_layout.bounds();
+        let Some(hue_layout) = hsv_color_children.next() else {
+            return event::Status::Ignored;
+        };
+        let hue_bounds = hue_layout.bounds();
 
         match event {
             Event::Mouse(mouse::Event::WheelScrolled { delta }) => match delta {
@@ -251,45 +260,45 @@ where
         let mut rgba_color_children = layout.children();
         let mut color_changed = false;
 
-        let mut red_row_children = rgba_color_children
-            .next()
-            .expect("widget: Layout should have a red row layout")
-            .children();
+        let Some(red_row_layout) = rgba_color_children.next() else {
+            return event::Status::Ignored;
+        };
+        let mut red_row_children = red_row_layout.children();
         let _ = red_row_children.next();
-        let red_bar_bounds = red_row_children
-            .next()
-            .expect("widget: Layout should have a red bar layout")
-            .bounds();
+        let Some(red_bar_layout) = red_row_children.next() else {
+            return event::Status::Ignored;
+        };
+        let red_bar_bounds = red_bar_layout.bounds();
 
-        let mut green_row_children = rgba_color_children
-            .next()
-            .expect("widget: Layout should have a green row layout")
-            .children();
+        let Some(green_row_layout) = rgba_color_children.next() else {
+            return event::Status::Ignored;
+        };
+        let mut green_row_children = green_row_layout.children();
         let _ = green_row_children.next();
-        let green_bar_bounds = green_row_children
-            .next()
-            .expect("widget: Layout should have a green bar layout")
-            .bounds();
+        let Some(green_bar_layout) = green_row_children.next() else {
+            return event::Status::Ignored;
+        };
+        let green_bar_bounds = green_bar_layout.bounds();
 
-        let mut blue_row_children = rgba_color_children
-            .next()
-            .expect("widget: Layout should have a blue row layout")
-            .children();
+        let Some(blue_row_layout) = rgba_color_children.next() else {
+            return event::Status::Ignored;
+        };
+        let mut blue_row_children = blue_row_layout.children();
         let _ = blue_row_children.next();
-        let blue_bar_bounds = blue_row_children
-            .next()
-            .expect("widget: Layout should have a blue bar layout")
-            .bounds();
+        let Some(blue_bar_layout) = blue_row_children.next() else {
+            return event::Status::Ignored;
+        };
+        let blue_bar_bounds = blue_bar_layout.bounds();
 
-        let mut alpha_row_children = rgba_color_children
-            .next()
-            .expect("widget: Layout should have an alpha row layout")
-            .children();
+        let Some(alpha_row_layout) = rgba_color_children.next() else {
+            return event::Status::Ignored;
+        };
+        let mut alpha_row_children = alpha_row_layout.children();
         let _ = alpha_row_children.next();
-        let alpha_bar_bounds = alpha_row_children
-            .next()
-            .expect("widget: Layout should have an alpha bar layout")
-            .bounds();
+        let Some(alpha_bar_layout) = alpha_row_children.next() else {
+            return event::Status::Ignored;
+        };
+        let alpha_bar_bounds = alpha_bar_layout.bounds();
 
         match event {
             Event::Mouse(mouse::Event::WheelScrolled { delta }) => match delta {
@@ -565,15 +574,14 @@ where
         };
 
         let mut divider_children = divider.children().iter();
-
-        let block1_bounds = divider_children
-            .next()
-            .expect("Divider should have a first child")
-            .bounds();
-        let block2_bounds = divider_children
-            .next()
-            .expect("Divider should have a second child")
-            .bounds();
+        let Some(block1_slot) = divider_children.next() else {
+            return divider;
+        };
+        let Some(block2_slot) = divider_children.next() else {
+            return divider;
+        };
+        let block1_bounds = block1_slot.bounds();
+        let block2_bounds = block2_slot.bounds();
 
         // ----------- Block 1 ----------------------
         let block1_node = block1_layout(self, renderer, block1_bounds);
@@ -627,34 +635,37 @@ where
 
         let mut children = layout.children();
         // ----------- Block 1 ----------------------
-        let block1_layout = children
-            .next()
-            .expect("widget: Layout should have a 1. block layout");
+        let Some(block1_layout) = children.next() else {
+            return;
+        };
         let hsv_color_status = self.on_event_hsv_color(event, block1_layout, cursor, shell);
         // ----------- Block 1 end ------------------
 
         // ----------- Block 2 ----------------------
-        let block2_layout = children
-            .next()
-            .expect("widget: Layout should have a 2. block layout");
+        let Some(block2_layout) = children.next() else {
+            return;
+        };
 
         let mut block2_children = block2_layout.children();
 
         // ----------- RGBA Color -----------------------
-        let rgba_color_layout = block2_children
-            .next()
-            .expect("widget: Layout should have a RGBA color layout");
+        let Some(rgba_color_layout) = block2_children.next() else {
+            return;
+        };
         let rgba_color_status = self.on_event_rgba_color(event, rgba_color_layout, cursor, shell);
 
         // ----------- Hex Text ----------------------
-        let _hex_text_layout = block2_children
-            .next()
-            .expect("widget: Layout should have a hex text layout");
+        let Some(_hex_text_layout) = block2_children.next() else {
+            return;
+        };
 
         // ----------- Hex Copy Button -----------------
-        let hex_copy_button_layout = block2_children
-            .next()
-            .expect("widget: Layout should have a hex copy button layout");
+        let Some(hex_copy_button_layout) = block2_children.next() else {
+            return;
+        };
+        if self.tree.children.len() < 2 {
+            return;
+        }
 
         let mut hex_messages = Vec::new();
         self.hex_copy_button.update(
@@ -673,14 +684,14 @@ where
         }
 
         // ----------- RGBA Text ----------------------
-        let _rgba_text_layout = block2_children
-            .next()
-            .expect("widget: Layout should have a rgba text layout");
+        let Some(_rgba_text_layout) = block2_children.next() else {
+            return;
+        };
 
         // ----------- RGBA Copy Button -----------------
-        let rgba_copy_button_layout = block2_children
-            .next()
-            .expect("widget: Layout should have a rgba copy button layout");
+        let Some(rgba_copy_button_layout) = block2_children.next() else {
+            return;
+        };
 
         let mut rgba_messages = Vec::new();
         self.rgba_copy_button.update(
@@ -727,45 +738,45 @@ where
         let mouse_interaction = mouse::Interaction::default();
 
         // Block 1
-        let block1_layout = children
-            .next()
-            .expect("Graphics: Layout should have a 1. block layout");
+        let Some(block1_layout) = children.next() else {
+            return mouse_interaction;
+        };
         let mut block1_mouse_interaction = mouse::Interaction::default();
         // HSV color
         let mut hsv_color_children = block1_layout.children();
-        let sat_value_layout = hsv_color_children
-            .next()
-            .expect("Graphics: Layout should have a sat/value layout");
+        let Some(sat_value_layout) = hsv_color_children.next() else {
+            return mouse_interaction;
+        };
         if cursor.is_over(sat_value_layout.bounds()) {
             block1_mouse_interaction = block1_mouse_interaction.max(mouse::Interaction::Pointer);
         }
-        let hue_layout = hsv_color_children
-            .next()
-            .expect("Graphics: Layout should have a hue layout");
+        let Some(hue_layout) = hsv_color_children.next() else {
+            return mouse_interaction.max(block1_mouse_interaction);
+        };
         if cursor.is_over(hue_layout.bounds()) {
             block1_mouse_interaction = block1_mouse_interaction.max(mouse::Interaction::Pointer);
         }
 
         // Block 2
-        let block2_layout = children
-            .next()
-            .expect("Graphics: Layout should have a 2. block layout");
+        let Some(block2_layout) = children.next() else {
+            return mouse_interaction.max(block1_mouse_interaction);
+        };
 
         let mut block2_mouse_interaction = mouse::Interaction::default();
         let mut block2_children = block2_layout.children();
         // RGBA color
-        let rgba_color_layout = block2_children
-            .next()
-            .expect("Graphics: Layout should have a RGBA color layout");
+        let Some(rgba_color_layout) = block2_children.next() else {
+            return mouse_interaction.max(block1_mouse_interaction);
+        };
         let mut rgba_color_children = rgba_color_layout.children();
 
         let f = |layout: Layout<'_>, cursor: Cursor| {
             let mut children = layout.children();
 
             let _label_layout = children.next();
-            let bar_layout = children
-                .next()
-                .expect("Graphics: Layout should have a bar layout");
+            let Some(bar_layout) = children.next() else {
+                return mouse::Interaction::default();
+            };
 
             if cursor.is_over(bar_layout.bounds()) {
                 mouse::Interaction::ResizingHorizontally
@@ -773,29 +784,44 @@ where
                 mouse::Interaction::default()
             }
         };
-        let red_row_layout = rgba_color_children
-            .next()
-            .expect("Graphics: Layout should have a red row layout");
+        let Some(red_row_layout) = rgba_color_children.next() else {
+            return mouse_interaction
+                .max(block1_mouse_interaction)
+                .max(block2_mouse_interaction);
+        };
         block2_mouse_interaction = block2_mouse_interaction.max(f(red_row_layout, cursor));
-        let green_row_layout = rgba_color_children
-            .next()
-            .expect("Graphics: Layout should have a green row layout");
+        let Some(green_row_layout) = rgba_color_children.next() else {
+            return mouse_interaction
+                .max(block1_mouse_interaction)
+                .max(block2_mouse_interaction);
+        };
         block2_mouse_interaction = block2_mouse_interaction.max(f(green_row_layout, cursor));
-        let blue_row_layout = rgba_color_children
-            .next()
-            .expect("Graphics: Layout should have a blue row layout");
+        let Some(blue_row_layout) = rgba_color_children.next() else {
+            return mouse_interaction
+                .max(block1_mouse_interaction)
+                .max(block2_mouse_interaction);
+        };
         block2_mouse_interaction = block2_mouse_interaction.max(f(blue_row_layout, cursor));
-        let alpha_row_layout = rgba_color_children
-            .next()
-            .expect("Graphics: Layout should have an alpha row layout");
+        let Some(alpha_row_layout) = rgba_color_children.next() else {
+            return mouse_interaction
+                .max(block1_mouse_interaction)
+                .max(block2_mouse_interaction);
+        };
         block2_mouse_interaction = block2_mouse_interaction.max(f(alpha_row_layout, cursor));
 
         let _hex_text_layout = block2_children.next();
+        if self.tree.children.len() < 2 {
+            return mouse_interaction
+                .max(block1_mouse_interaction)
+                .max(block2_mouse_interaction);
+        }
 
         // Hex Copy Button
-        let hex_copy_button_layout = block2_children
-            .next()
-            .expect("Graphics: Layout should have a hex copy button layout");
+        let Some(hex_copy_button_layout) = block2_children.next() else {
+            return mouse_interaction
+                .max(block1_mouse_interaction)
+                .max(block2_mouse_interaction);
+        };
         let hex_copy_interaction = self.hex_copy_button.mouse_interaction(
             &self.tree.children[0],
             hex_copy_button_layout,
@@ -807,9 +833,12 @@ where
         let _rgba_text_layout = block2_children.next();
 
         // RGBA Copy Button
-        let rgba_copy_button_layout = block2_children
-            .next()
-            .expect("Graphics: Layout should have a rgba copy button layout");
+        let Some(rgba_copy_button_layout) = block2_children.next() else {
+            return mouse_interaction
+                .max(block1_mouse_interaction)
+                .max(block2_mouse_interaction)
+                .max(hex_copy_interaction);
+        };
         let rgba_copy_interaction = self.rgba_copy_button.mouse_interaction(
             &self.tree.children[1],
             rgba_copy_button_layout,
@@ -922,15 +951,15 @@ where
         }
 
         // ----------- Block 1 ----------------------
-        let block1_layout = children
-            .next()
-            .expect("Graphics: Layout should have a 1. block layout");
+        let Some(block1_layout) = children.next() else {
+            return;
+        };
         block1(renderer, self, block1_layout, cursor, &style_sheet);
 
         // ----------- Block 2 ----------------------
-        let block2_layout = children
-            .next()
-            .expect("Graphics: Layout should have a 2. block layout");
+        let Some(block2_layout) = children.next() else {
+            return;
+        };
 
         block2(
             renderer,
@@ -1195,9 +1224,9 @@ fn block2<Message>(
     let mut block2_children = layout.children();
 
     // ----------- RGBA Color ----------------------
-    let rgba_color_layout = block2_children
-        .next()
-        .expect("Graphics: Layout should have a RGBA color layout");
+    let Some(rgba_color_layout) = block2_children.next() else {
+        return;
+    };
     rgba_color(
         renderer,
         rgba_color_layout,
@@ -1209,9 +1238,9 @@ fn block2<Message>(
     );
 
     // ----------- Hex text ----------------------
-    let hex_text_layout = block2_children
-        .next()
-        .expect("Graphics: Layout should have a hex text layout");
+    let Some(hex_text_layout) = block2_children.next() else {
+        return;
+    };
     hex_text(
         renderer,
         hex_text_layout,
@@ -1222,10 +1251,14 @@ fn block2<Message>(
         color_picker.state.focus,
     );
 
+    if color_picker.tree.children.len() < 2 {
+        return;
+    }
+
     // ----------- Hex Copy Button -------------------------
-    let hex_copy_button_layout = block2_children
-        .next()
-        .expect("Graphics: Layout should have a hex copy button layout");
+    let Some(hex_copy_button_layout) = block2_children.next() else {
+        return;
+    };
 
     color_picker.hex_copy_button.draw(
         &color_picker.tree.children[0],
@@ -1238,9 +1271,9 @@ fn block2<Message>(
     );
 
     // ----------- RGBA text ----------------------
-    let rgba_text_layout = block2_children
-        .next()
-        .expect("Graphics: Layout should have a rgba text layout");
+    let Some(rgba_text_layout) = block2_children.next() else {
+        return;
+    };
     rgba_text(
         renderer,
         rgba_text_layout,
@@ -1252,9 +1285,9 @@ fn block2<Message>(
     );
 
     // ----------- RGBA Copy Button -------------------------
-    let rgba_copy_button_layout = block2_children
-        .next()
-        .expect("Graphics: Layout should have a rgba copy button layout");
+    let Some(rgba_copy_button_layout) = block2_children.next() else {
+        return;
+    };
 
     color_picker.rgba_copy_button.draw(
         &color_picker.tree.children[1],
@@ -1386,9 +1419,9 @@ fn hsv_color<Message>(
     let mut hsv_color_children = layout.children();
     let hsv_color: Hsv = color_picker.state.color.into();
 
-    let sat_value_layout = hsv_color_children
-        .next()
-        .expect("Graphics: Layout should have a sat/value layout");
+    let Some(sat_value_layout) = hsv_color_children.next() else {
+        return;
+    };
     let mut sat_value_style_state = StyleState::Active;
     if color_picker.state.focus == Focus::SatValue {
         sat_value_style_state = sat_value_style_state.max(StyleState::Focused);
@@ -1397,9 +1430,9 @@ fn hsv_color<Message>(
     //     sat_value_style_state = sat_value_style_state.max(StyleState::Hovered);
     // }
 
-    let sat_value_style = style_sheet
-        .get(&sat_value_style_state)
-        .expect("Style Sheet not found.");
+    let Some(sat_value_style) = style_or_active(style_sheet, &sat_value_style_state) else {
+        return;
+    };
     let radius = sat_value_style.bar_border_radius;
 
     let geometry = color_picker.state.sat_value_canvas_cache.draw(
@@ -1523,9 +1556,9 @@ fn hsv_color<Message>(
         renderer.draw_geometry(geometry);
     });
 
-    let hue_layout = hsv_color_children
-        .next()
-        .expect("Graphics: Layout should have a hue layout");
+    let Some(hue_layout) = hsv_color_children.next() else {
+        return;
+    };
     let mut hue_style_state = StyleState::Active;
     if color_picker.state.focus == Focus::Hue {
         hue_style_state = hue_style_state.max(StyleState::Focused);
@@ -1534,9 +1567,9 @@ fn hsv_color<Message>(
     //     hue_style_state = hue_style_state.max(StyleState::Hovered);
     // }
 
-    let hue_style = style_sheet
-        .get(&hue_style_state)
-        .expect("Style Sheet not found.");
+    let Some(hue_style) = style_or_active(style_sheet, &hue_style_state) else {
+        return;
+    };
     let radius = hue_style.bar_border_radius;
 
     let geometry =
@@ -1652,15 +1685,15 @@ fn rgba_color(
              target: Focus| {
         let mut children = layout.children();
 
-        let label_layout = children
-            .next()
-            .expect("Graphics: Layout should have a label layout");
-        let bar_layout = children
-            .next()
-            .expect("Graphics: Layout should have a bar layout");
-        let value_layout = children
-            .next()
-            .expect("Graphics: Layout should have a value layout");
+        let Some(label_layout) = children.next() else {
+            return;
+        };
+        let Some(bar_layout) = children.next() else {
+            return;
+        };
+        let Some(value_layout) = children.next() else {
+            return;
+        };
 
         // Label
         renderer.fill_text(
@@ -1690,6 +1723,9 @@ fn rgba_color(
         } else {
             StyleState::Active
         };
+        let Some(bar_style) = style_or_active(style_sheet, &bar_style_state) else {
+            return;
+        };
 
         // Bar background
         let background_bounds = Rectangle {
@@ -1703,11 +1739,7 @@ fn rgba_color(
                 renderer::Quad {
                     bounds: background_bounds,
                     border: Border {
-                        radius: style_sheet
-                            .get(&bar_style_state)
-                            .expect("Style Sheet not found.")
-                            .bar_border_radius
-                            .into(),
+                        radius: bar_style.bar_border_radius.into(),
                         width: 0.0,
                         color: Color::TRANSPARENT,
                     },
@@ -1723,16 +1755,9 @@ fn rgba_color(
                 renderer::Quad {
                     bounds: bar_bounds,
                     border: Border {
-                        radius: style_sheet
-                            .get(&bar_style_state)
-                            .expect("Style Sheet not found.")
-                            .bar_border_radius
-                            .into(),
+                        radius: bar_style.bar_border_radius.into(),
                         width: 0.0,
-                        color: style_sheet
-                            .get(&bar_style_state)
-                            .expect("Style Sheet not found.")
-                            .bar_border_color,
+                        color: bar_style.bar_border_color,
                     },
                     ..renderer::Quad::default()
                 },
@@ -1763,20 +1788,17 @@ fn rgba_color(
 
         let bounds = layout.bounds();
         if (focus == target) && (bounds.width > 0.) && (bounds.height > 0.) {
+            let focused_state = StyleState::Focused;
+            let Some(focused_style) = style_or_active(style_sheet, &focused_state) else {
+                return;
+            };
             renderer.fill_quad(
                 renderer::Quad {
                     bounds,
                     border: Border {
-                        radius: style_sheet
-                            .get(&StyleState::Focused)
-                            .expect("Style Sheet not found.")
-                            .border_radius
-                            .into(),
+                        radius: focused_style.border_radius.into(),
                         width: 0.0,
-                        color: style_sheet
-                            .get(&StyleState::Focused)
-                            .expect("Style Sheet not found.")
-                            .border_color,
+                        color: focused_style.border_color,
                     },
                     ..renderer::Quad::default()
                 },
@@ -1786,9 +1808,9 @@ fn rgba_color(
     };
 
     // Red
-    let red_row_layout = rgba_color_children
-        .next()
-        .expect("Graphics: Layout should have a red row layout");
+    let Some(red_row_layout) = rgba_color_children.next() else {
+        return;
+    };
 
     f(
         renderer,
@@ -1801,9 +1823,9 @@ fn rgba_color(
     );
 
     // Green
-    let green_row_layout = rgba_color_children
-        .next()
-        .expect("Graphics: Layout should have a green row layout");
+    let Some(green_row_layout) = rgba_color_children.next() else {
+        return;
+    };
 
     f(
         renderer,
@@ -1816,9 +1838,9 @@ fn rgba_color(
     );
 
     // Blue
-    let blue_row_layout = rgba_color_children
-        .next()
-        .expect("Graphics: Layout should have a blue row layout");
+    let Some(blue_row_layout) = rgba_color_children.next() else {
+        return;
+    };
 
     f(
         renderer,
@@ -1831,9 +1853,9 @@ fn rgba_color(
     );
 
     // Alpha
-    let alpha_row_layout = rgba_color_children
-        .next()
-        .expect("Graphics: Layout should have an alpha row layout");
+    let Some(alpha_row_layout) = rgba_color_children.next() else {
+        return;
+    };
 
     f(
         renderer,

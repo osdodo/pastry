@@ -18,13 +18,9 @@ static LAST_HOTKEY_TIME: OnceLock<std::sync::Mutex<Instant>> = OnceLock::new();
 
 pub const MAIN_HOTKEY_ID: u32 = 1;
 
-pub fn setup_hotkey() {
-    let manager = GlobalHotKeyManager::new().unwrap_or_else(|_| {
-        panic!(
-            "{}",
-            language::tr(language::Text::HotkeyManagerCreateFailed)
-        )
-    });
+pub fn setup_hotkey() -> Result<(), String> {
+    let manager = GlobalHotKeyManager::new()
+        .map_err(|_| language::tr(language::Text::HotkeyManagerCreateFailed).to_string())?;
 
     #[cfg(target_os = "macos")]
     let hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyV);
@@ -36,11 +32,13 @@ pub fn setup_hotkey() {
 
     manager
         .register(hotkey)
-        .unwrap_or_else(|_| panic!("{}", language::tr(language::Text::HotkeyRegisterFailed)));
+        .map_err(|_| language::tr(language::Text::HotkeyRegisterFailed).to_string())?;
 
     MANAGER.with(|cell| {
         let _ = cell.set(manager);
     });
+
+    Ok(())
 }
 
 fn with_manager(f: impl FnOnce(&GlobalHotKeyManager)) -> bool {
@@ -109,10 +107,12 @@ pub fn update_workflow_hotkeys(workflows: &[Workflow]) {
 
         // For now, let's just register all enabled ones.
         static REGISTERED_HOTKEYS: OnceLock<std::sync::Mutex<Vec<HotKey>>> = OnceLock::new();
-        let mut registered_hotkeys = REGISTERED_HOTKEYS
+        let Ok(mut registered_hotkeys) = REGISTERED_HOTKEYS
             .get_or_init(|| std::sync::Mutex::new(Vec::new()))
             .lock()
-            .unwrap();
+        else {
+            return;
+        };
 
         // Unregister old ones
         if !registered_hotkeys.is_empty() {

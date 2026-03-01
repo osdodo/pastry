@@ -122,19 +122,26 @@ fn highlight_segments(s: &str, palette: iced::theme::Palette) -> Vec<(String, ic
     let mut i: usize = 0;
     let len = s.len();
     while i < len {
-        let ch = s[i..].chars().next().unwrap();
+        let Some(ch) = s[i..].chars().next() else {
+            break;
+        };
         let ch_len = ch.len_utf8();
         if ch == '"' {
             let start = i;
             i += ch_len;
             while i < len {
-                let c2 = s[i..].chars().next().unwrap();
+                let Some(c2) = s[i..].chars().next() else {
+                    break;
+                };
                 let l2 = c2.len_utf8();
                 if c2 == '\\' {
                     i += l2;
                     if i < len {
-                        let esc = s[i..].chars().next().unwrap();
-                        i += esc.len_utf8();
+                        if let Some(esc) = s[i..].chars().next() {
+                            i += esc.len_utf8();
+                        } else {
+                            break;
+                        }
                     }
                     continue;
                 }
@@ -149,7 +156,9 @@ fn highlight_segments(s: &str, palette: iced::theme::Palette) -> Vec<(String, ic
             let mut is_key = false;
             let mut j = i;
             while j < len {
-                let c = s[j..].chars().next().unwrap();
+                let Some(c) = s[j..].chars().next() else {
+                    break;
+                };
                 if c.is_whitespace() {
                     j += c.len_utf8();
                 } else if c == ':' {
@@ -170,7 +179,9 @@ fn highlight_segments(s: &str, palette: iced::theme::Palette) -> Vec<(String, ic
             let start = i;
             i += ch_len;
             while i < len {
-                let c2 = s[i..].chars().next().unwrap();
+                let Some(c2) = s[i..].chars().next() else {
+                    break;
+                };
                 if c2.is_ascii_digit()
                     || c2 == '.'
                     || c2 == 'e'

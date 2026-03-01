@@ -24,9 +24,6 @@ fn main() -> iced::Result {
     let start_hidden = settings.start_hidden.unwrap_or(false);
     let web_server_enabled = settings.web_server_enabled.unwrap_or(false);
 
-    platform::tray::setup_tray();
-    platform::hotkey::setup_hotkey();
-
     let (screen_width, screen_height) = platform::screen::get_screen_size();
     let window_height = platform::screen::get_window_height(WINDOW_MARGIN);
 

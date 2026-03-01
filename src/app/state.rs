@@ -83,6 +83,10 @@ impl WindowState {
 }
 
 pub struct State {
+    pub integrations_initialized: bool,
+    pub tray_initialized: bool,
+    pub hotkey_initialized: bool,
+    pub integration_init_retries: u8,
     pub window: WindowState,
     pub page: PageState,
 
@@ -135,6 +139,10 @@ impl State {
         }
 
         let mut state = Self {
+            integrations_initialized: false,
+            tray_initialized: false,
+            hotkey_initialized: false,
+            integration_init_retries: 0,
             window: WindowState::new(start_hidden),
             page: PageState::new(Page::Main),
             clipboard: clipboard_state,

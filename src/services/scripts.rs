@@ -264,7 +264,7 @@ pub(crate) fn execute_script_blocking(code: &str, input: &str) -> Result<String,
                     format!("{:x}", md5::compute(s.as_bytes()))
                 }),
             )
-            .unwrap();
+            .map_err(|e| e.to_string())?;
 
         // sha256
         global
@@ -276,7 +276,7 @@ pub(crate) fn execute_script_blocking(code: &str, input: &str) -> Result<String,
                     hex::encode(hasher.finalize())
                 }),
             )
-            .unwrap();
+            .map_err(|e| e.to_string())?;
 
         // base64
         global
@@ -284,7 +284,7 @@ pub(crate) fn execute_script_blocking(code: &str, input: &str) -> Result<String,
                 "base64_encode",
                 Function::new(ctx.clone(), |s: String| general_purpose::STANDARD.encode(s)),
             )
-            .unwrap();
+            .map_err(|e| e.to_string())?;
 
         global
             .set(
@@ -294,7 +294,7 @@ pub(crate) fn execute_script_blocking(code: &str, input: &str) -> Result<String,
                         .unwrap_or_default()
                 }),
             )
-            .unwrap();
+            .map_err(|e| e.to_string())?;
 
         // uuid
         global
@@ -302,7 +302,7 @@ pub(crate) fn execute_script_blocking(code: &str, input: &str) -> Result<String,
                 "uuid",
                 Function::new(ctx.clone(), || uuid::Uuid::new_v4().to_string()),
             )
-            .unwrap();
+            .map_err(|e| e.to_string())?;
 
         // Execute
         ctx.eval::<(), _>(code).map_err(|e| e.to_string())?;

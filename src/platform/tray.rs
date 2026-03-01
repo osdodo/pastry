@@ -9,8 +9,8 @@ use tray_icon::{
 static MENU_SHOW_ID: OnceLock<RwLock<MenuId>> = OnceLock::new();
 static MENU_SETTINGS_ID: OnceLock<RwLock<MenuId>> = OnceLock::new();
 static MENU_QUIT_ID: OnceLock<RwLock<MenuId>> = OnceLock::new();
-pub fn setup_tray() {
-    init_linux_gtk();
+pub fn setup_tray() -> Result<(), String> {
+    init_linux_gtk()?;
 
     let menu = Menu::new();
     let show_item = MenuItem::new(language::tr(language::Text::ShowClipboard), true, None);
@@ -43,29 +43,33 @@ pub fn setup_tray() {
     let _ = menu.append(&settings_item);
     let _ = menu.append(&quit_item);
 
-    let icon = load_icon();
+    let icon = load_icon()?;
     let tray = TrayIconBuilder::new()
         .with_menu(Box::new(menu))
         .with_tooltip("Pastry")
         .with_icon(icon)
         .build()
-        .unwrap_or_else(|_| panic!("{}", language::tr(language::Text::TrayBuildFailed)));
+        .map_err(|_| language::tr(language::Text::TrayBuildFailed).to_string())?;
 
     Box::leak(Box::new(tray));
+    Ok(())
 }
 
 #[cfg(target_os = "linux")]
-fn init_linux_gtk() {
-    gtk::init().unwrap_or_else(|err| panic!("Failed to initialize GTK: {err}"));
+fn init_linux_gtk() -> Result<(), String> {
+    gtk::init().map_err(|err| format!("Failed to initialize GTK: {err}"))?;
+    Ok(())
 }
 
 #[cfg(not(target_os = "linux"))]
-fn init_linux_gtk() {}
+fn init_linux_gtk() -> Result<(), String> {
+    Ok(())
+}
 
-fn load_icon() -> tray_icon::Icon {
+fn load_icon() -> Result<tray_icon::Icon, String> {
     const LOGO_BYTES: &[u8] = include_bytes!("../../assets/logo.png");
     let img = image::load_from_memory_with_format(LOGO_BYTES, image::ImageFormat::Png)
-        .unwrap_or_else(|_| panic!("{}", language::tr(language::Text::ImageLoadFailed)))
+        .map_err(|_| language::tr(language::Text::ImageLoadFailed).to_string())?
         .to_rgba8();
 
     let target = tray_icon_target_size();
@@ -102,7 +106,7 @@ fn load_icon() -> tray_icon::Icon {
     }
 
     tray_icon::Icon::from_rgba(rgba_data, target, target)
-        .unwrap_or_else(|_| panic!("{}", language::tr(language::Text::IconCreateFailed)))
+        .map_err(|_| language::tr(language::Text::IconCreateFailed).to_string())
 }
 
 fn tray_icon_target_size() -> u32 {

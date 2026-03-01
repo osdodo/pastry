@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use iced::{Point, Size, Task, window as iced_window};
 use serde_json::Value;
@@ -9,6 +9,7 @@ use crate::{
     platform::{
         hotkey,
         screen::{get_screen_size, get_window_height, set_window_position},
+        tray,
     },
     services::storage::Storage,
     services::workflows::Workflow,
@@ -64,6 +65,43 @@ fn start_show_animation(state: &mut State) -> Task<Message> {
     }
     state.window.pending_show = true;
     Task::none()
+}
+
+fn ensure_integrations_initialized(state: &mut State) -> Task<Message> {
+    if state.integrations_initialized {
+        return Task::none();
+    }
+
+    if !state.tray_initialized {
+        match tray::setup_tray() {
+            Ok(()) => state.tray_initialized = true,
+            Err(err) => eprintln!("[Pastry] tray setup failed: {err}"),
+        }
+    }
+
+    if !state.hotkey_initialized {
+        match hotkey::setup_hotkey() {
+            Ok(()) => state.hotkey_initialized = true,
+            Err(err) => eprintln!("[Pastry] hotkey setup failed: {err}"),
+        }
+    }
+
+    state.integrations_initialized = state.tray_initialized && state.hotkey_initialized;
+    if state.integrations_initialized {
+        return Task::none();
+    }
+
+    if state.integration_init_retries >= 6 {
+        return Task::none();
+    }
+
+    state.integration_init_retries += 1;
+    Task::perform(
+        async {
+            tokio::time::sleep(Duration::from_millis(250)).await;
+        },
+        |_| Message::RetryInitializeIntegrations,
+    )
 }
 
 fn update_dialog_position_from_cursor(state: &mut State) {
@@ -528,16 +566,18 @@ pub fn update(state: &mut State, msg: Message) -> Task<Message> {
         Message::QuitApp => std::process::exit(0),
         Message::WindowOpened(id) => {
             state.window.id = Some(id);
+            let init_task = ensure_integrations_initialized(state);
             if state.window.pending_show {
                 state.window.pending_show = false;
                 state.window.target_visible = true;
                 state.window.animating = true;
                 state.window.animation_start = Some(Instant::now());
                 state.window.suppress_focus_show = false;
-                return iced_window::gain_focus(id);
+                return Task::batch(vec![init_task, iced_window::gain_focus(id)]);
             }
-            Task::none()
+            init_task
         }
+        Message::RetryInitializeIntegrations => ensure_integrations_initialized(state),
         Message::WindowFocusLost => {
             if !state.pinned && !state.window.animating && state.window.visible {
                 start_hide_animation(state);
