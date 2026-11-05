@@ -20,6 +20,16 @@ Pastry 是一个剪贴板管理应用。它可以帮助你管理剪贴板历史�
 - **系统集成**：全局热键、托盘运行、启动选项、窗口置顶
 - **个性化**：多语言支持与明暗主题
 
+## 安装
+
+macOS（Homebrew）：
+
+```bash
+brew install --cask osdodo/pastry/pastry
+```
+
+或从 [Releases](https://github.com/osdodo/pastry/releases) 下载对应平台的安装包。
+
 ## 基本使用
 
 - 复制内容后，通过全局热键打开 Pastry
@@ -37,7 +47,7 @@ Pastry 是一个剪贴板管理应用。它可以帮助你管理剪贴板历史�
 
 ## 常见问题（macOS）
 
-如果打开 `Pastry.app` 时提示“已损坏，无法打开。你应该将它移到废纸篓”，请在终端执行：
+Homebrew 安装会自动移除隔离属性。如果是手动下载 zip 安装，打开 `Pastry.app` 时提示“已损坏，无法打开。你应该将它移到废纸篓”，请在终端执行：
 
 ```bash
 sudo xattr -r -d com.apple.quarantine /Applications/Pastry.app

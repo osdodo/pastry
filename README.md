@@ -20,6 +20,16 @@ Pastry is a clipboard management application. It helps you manage your clipboard
 - **System integration**: Global hotkey, tray mode, startup options, always-on-top
 - **Customization**: Multi-language support and light/dark themes
 
+## Install
+
+macOS (Homebrew):
+
+```bash
+brew install --cask osdodo/pastry/pastry
+```
+
+Or download the archive for your platform from [Releases](https://github.com/osdodo/pastry/releases).
+
 ## Basic Usage
 
 - Copy content, then open Pastry with your global hotkey
@@ -37,7 +47,7 @@ Pastry is a clipboard management application. It helps you manage your clipboard
 
 ## Troubleshooting (macOS)
 
-If opening `Pastry.app` shows "is damaged and can't be opened. You should move it to the Bin.", run:
+The Homebrew cask removes the quarantine attribute for you. If you installed from the zip and opening `Pastry.app` shows "is damaged and can't be opened. You should move it to the Bin.", run:
 
 ```bash
 sudo xattr -r -d com.apple.quarantine /Applications/Pastry.app
